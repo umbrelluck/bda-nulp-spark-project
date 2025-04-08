@@ -1,55 +1,52 @@
-from pyspark.sql.functions import col, explode, split, row_number
+from pyspark.sql.functions import col, explode, split, row_number, avg, countDistinct
 from pyspark.sql.window import Window
 
 
-def top_rated_movies(title_df, ratings_df):
-    result = (
+def top_rated_movies_by_year(title_df, ratings_df):
+    movies = (
         title_df.filter((col("titleType") == "movie") & (col("isAdult") == 0))
         .join(ratings_df, "tconst")
-        .filter(col("numVotes") > 1000)
-        .orderBy(col("averageRating").desc())
-        .select("primaryTitle", "startYear", "averageRating", "numVotes")
+        .filter((col("numVotes") > 1000) & (col("startYear").isNotNull()))
     )
+    window_spec = Window.partitionBy("startYear").orderBy(col("averageRating").desc())
+    ranked = movies.withColumn("rank", row_number().over(window_spec))
+    top_movies = ranked.filter(col("rank") <= 3)
+    top_movies.select("startYear", "primaryTitle", "averageRating", "numVotes", "rank") \
+        .orderBy("startYear", "rank") \
+        .show(30, truncate=False)
 
-    result.show(10, truncate=False)
 
-
-def most_active_actors(names_df, principals_df):
+def most_active_actors_in_movies(principals_df, names_df, title_df):
     actors = principals_df.filter(col("category") == "actor")
+    actors_with_titles = actors.join(title_df, on="tconst") \
+        .filter(col("titleType").isin("movie", "tvSeries"))
 
     result = (
-        actors.groupBy("nconst")
-        .count()
+        actors_with_titles.groupBy("nconst")
+        .agg(countDistinct("tconst").alias("uniqueTitleCount"))
         .join(names_df, "nconst")
-        .orderBy(col("count").desc())
-        .select("primaryName", "count")
+        .orderBy(col("uniqueTitleCount").desc())
+        .select("primaryName", "uniqueTitleCount")
     )
 
     result.show(10, truncate=False)
 
 
-def top_directors_with_ratings(crew_df, title_df, ratings_df, names_df):
-    directors_df = (
-        crew_df.withColumn("director", col("directors"))
-        .select("tconst", "director")
-        .filter(col("director").isNotNull())
+def top_directors_with_ratings(crew_df, ratings_df, title_df, names_df):
+    rated_titles = title_df.join(ratings_df, on="tconst").filter(col("titleType") == "movie")
+    rated_titles_with_directors = rated_titles.join(crew_df, on="tconst").filter(col("directors").isNotNull())
+    rated_titles_with_directors = rated_titles_with_directors.withColumn(
+        "director", explode(split("directors", ","))
     )
 
-    joined = (
-        directors_df.join(ratings_df, "tconst")
-        .join(title_df, "tconst")
-        .filter(col("titleType") == "movie")
-        .groupBy("director")
-        .avg("averageRating")
-        .withColumnRenamed("avg(averageRating)", "avgRating")
-        .orderBy(col("avgRating").desc())
+    rated_titles_with_directors = rated_titles_with_directors.join(
+        names_df.select("nconst", "primaryName"),
+        rated_titles_with_directors["director"] == names_df["nconst"]
     )
 
-    result = joined.join(names_df, joined.director == names_df.nconst).select(
-        "primaryName", "avgRating"
-    )
-
-    result.show(10, truncate=False)
+    top_directors = rated_titles_with_directors.groupBy("primaryName") \
+        .agg(avg("averageRating").alias("averageRating"))
+    top_directors.orderBy(col("averageRating").desc()).show(20, truncate=False)
 
 
 def popular_genres(title_df, ratings_df):
@@ -106,10 +103,10 @@ def top_movie_per_genre(title_df, ratings_df):
 def call_yevhen_functions(
     title_df, ratings_df, names_df, principals_df, crew_df, episodes_df
 ):
-    print("\nTop Rated Movies")
-    top_rated_movies(title_df, ratings_df)
-    print("\nMost Active Actors")
-    most_active_actors(names_df, principals_df)
+    print("\nTop Rated Movies by Year")
+    top_rated_movies_by_year(title_df, ratings_df)
+    print("\nMost Active Actors by Movies")
+    most_active_actors_in_movies(principals_df, names_df, title_df)
     print("\nTop Directors With Ratings")
     top_directors_with_ratings(crew_df, title_df, ratings_df, names_df)
     print("\nPopular Genres")
