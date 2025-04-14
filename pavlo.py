@@ -120,7 +120,7 @@ def underrated_directors(title_df, crew_df, ratings_df, names_df, min_votes=1000
     with_rank.select("rank", "primaryName", "avg_rating", "num_movies") \
              .orderBy("rank") \
              .show(20, truncate=False)
-    with_rank.write.mode("overwrite").open("output/pavlo.underrated_directors")
+    with_rank.write.mode("overwrite").option("header", "true").csv("output/pavlo.underrated_directors")
 
 
 def call_pavlo_functions(

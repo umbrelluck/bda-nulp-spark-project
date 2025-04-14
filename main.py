@@ -1,4 +1,5 @@
 from loader import load_database, test_database
+from analysis import analyze
 
 from yevhen import call_yevhen_functions
 from yarko import call_yarko_functions
@@ -13,6 +14,9 @@ if __name__ == "__main__":
 
     print("------- < Testing > -------")
     test_database(imdb)
+
+    print("------- < Analysis > -------")
+    analyze(imdb)
 
     print("------- < PAVLO > -------")
     call_pavlo_functions(
