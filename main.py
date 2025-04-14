@@ -2,6 +2,7 @@ from pyspark.sql import SparkSession
 
 
 from yevhen import call_yevhen_functions
+from pavlo import call_pavlo_functions
 
 
 def setup():
@@ -91,10 +92,13 @@ if __name__ == "__main__":
     # Для простоти кладіть ваші функції сюди, по типу
     # yarko(spark, ......)
     # pavlo(spark, ......)
+    call_pavlo_functions(
+        title_df, ratings_df, names_df, principals_df, crew_df, episodes_df
+    )
     # andrew(spark, .......)
     # eugene(spark, ........)
     # Пропоную просто зробити функцію для виклику своїх функцій і мати спокій, мій приклад:
     call_yevhen_functions(
-        title_df, ratings_df, names_df, principals_df, crew_df, episodes_df
+         title_df, ratings_df, names_df, principals_df, crew_df, episodes_df
     )
 
