@@ -24,7 +24,7 @@ if __name__ == "__main__":
         imdb["title.ratings"],
         imdb["name.basics"],
         imdb["title.principals"],
-        imdb["title.crew"]
+        imdb["title.crew"],
     )
 
     print("------- < YEVHEN > -------")
