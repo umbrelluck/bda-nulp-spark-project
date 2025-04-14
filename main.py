@@ -1,18 +1,19 @@
 from pyspark.sql import SparkSession
-import os
+
+from loader import load_database, test_database
 
 from yevhen import call_yevhen_functions
 from yarko import call_yarko_functions
 
 
 def setup():
-    ratings_path = "Dataset/title.ratings.tsv"
-    crew_path = "Dataset/title.crew.tsv"
-    names_path = "Dataset/name.basics.tsv"
-    episodes_path = "Dataset/title.episode.tsv"
-    title_path = "Dataset/title.basics.tsv"
-    title_alt_path = "Dataset/title.akas.tsv"
-    principals_path = "Dataset/title.principals.tsv"
+    ratings_path = "../Dataset/title.ratings.tsv"
+    crew_path = "../Dataset/title.crew.tsv"
+    names_path = "../Dataset/name.basics.tsv"
+    episodes_path = "../Dataset/title.episode.tsv"
+    title_path = "../Dataset/title.basics.tsv"
+    title_alt_path = "../Dataset/title.akas.tsv"
+    principals_path = "../Dataset/title.principals.tsv"
 
     spark = (
         SparkSession.builder.appName("IMDb Analysis")
@@ -79,16 +80,23 @@ def setup():
 
 
 if __name__ == "__main__":
-    (
-        spark,
-        crew_df,
-        ratings_df,
-        names_df,
-        episodes_df,
-        title_df,
-        title_alt_df,
-        principals_df,
-    ) = setup()
+    # (
+    #     spark,
+    #     crew_df,
+    #     ratings_df,
+    #     names_df,
+    #     episodes_df,
+    #     title_df,
+    #     title_alt_df,
+    #     principals_df,
+    # ) = setup()
+
+    IMDb_path = "../Dataset"
+    print("------- < Loading > -------")
+    imdb = load_database(IMDb_path)
+
+    print("------- < Testing > -------")
+    test_database(imdb)
 
     # NOTE:
     # Для простоти кладіть ваші функції сюди, по типу
@@ -98,11 +106,19 @@ if __name__ == "__main__":
     # eugene(spark, ........)
     # Пропоную просто зробити функцію для виклику своїх функцій і мати спокій, мій приклад:
     print("------- < YEVHEN > -------")
-    call_yevhen_functions(
-        title_df, ratings_df, names_df, principals_df, crew_df, episodes_df
-    )
+    # call_yevhen_functions(
+    #     title_df, ratings_df, names_df, principals_df, crew_df, episodes_df
+    # )
 
     print("------- < YARKO > -------")
     call_yarko_functions(
-        title_df, title_alt_df, ratings_df, names_df, principals_df, crew_df
+        imdb["title.basics"],
+        imdb["title.akas"],
+        imdb["title.ratings"],
+        imdb["name.basics"],
+        imdb["title.principals"],
+        imdb["title.crew"],
     )
+    # call_yarko_functions(
+    #     title_df, title_alt_df, ratings_df, names_df, principals_df, crew_df
+    # )

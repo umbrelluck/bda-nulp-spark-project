@@ -5,7 +5,7 @@ from itertools import combinations
 
 
 def best_partnership(title_df, names_df, ratings_df, crew_df):
-    hits = ratings_df.filter(F.col("averageRating").cast("float") > 8)
+    hits = ratings_df.filter(F.col("averageRating") > 8)
     movies = title_df.filter(F.col("titleType") == "movie")
     hit_movies = movies.join(hits, on="tconst", how="inner")
 
@@ -43,13 +43,20 @@ def best_partnership(title_df, names_df, ratings_df, crew_df):
         writer_names, on="writer_id", how="left"
     ).join(director_names, on="director_id", how="left")
 
-    top_collabs_named.filter(
-        (F.col("writerName").isNotNull())
-        & (F.col("directorName").isNotNull())
-        & (F.col("writerName") != F.col("directorName"))
-    ).select("writerName", "directorName", "collaborations").orderBy(
-        F.col("collaborations").desc()
-    ).show(20, truncate=False)
+    result = (
+        top_collabs_named.filter(
+            (F.col("writerName").isNotNull())
+            & (F.col("directorName").isNotNull())
+            & (F.col("writerName") != F.col("directorName"))
+        )
+        .select("writerName", "directorName", "collaborations")
+        .orderBy(F.col("collaborations").desc())
+    )
+
+    result.show(20, truncate=False)
+    result.write.mode("overwrite").option("header", True).csv(
+        "output/yarko.best_partnership"
+    )
 
 
 def most_widespread_films(title_df, title_alt_df):
@@ -72,6 +79,9 @@ def most_widespread_films(title_df, title_alt_df):
     )
 
     top_translated.show(20, truncate=False)
+    top_translated.write.mode("overwrite").option("header", True).csv(
+        "output/yarko.top_translated"
+    )
 
 
 def new_actors_per_year(principals_df, title_df):
@@ -83,7 +93,7 @@ def new_actors_per_year(principals_df, title_df):
     )
 
     actors_with_titles = actors_with_titles.withColumn(
-        "startYearInt", F.col("startYear").cast("int")
+        "startYearInt", F.col("startYear")
     )
 
     actors_with_titles = actors_with_titles.filter(
@@ -99,25 +109,36 @@ def new_actors_per_year(principals_df, title_df):
     )
 
     new_actors_per_year.show(20)
+    new_actors_per_year.write.mode("overwrite").option("header", True).csv(
+        "output/yarko.new_actors"
+    )
 
 
 def hate_watched(ratings_df, title_df):
-   all = title_df.join(ratings_df, on="tconst")
+    all = title_df.join(ratings_df, on="tconst")
 
-   min_rating = all.filter(F.col("titleType") == "movie") \
-                      .agg(F.min(F.col("averageRating").cast("float"))).collect()[0][0]
+    min_rating = (
+        all.filter(F.col("titleType") == "movie")
+        .agg(F.min(F.col("averageRating")))
+        .collect()[0][0]
+    )
 
-   worst_rated = all.filter(
-       (F.col("titleType") == "movie") &
-       (F.col("averageRating").cast("float") == min_rating) &
-       F.col("numVotes").isNotNull()
-   )
+    worst_rated = all.filter(
+        (F.col("titleType") == "movie")
+        & (F.col("averageRating") == min_rating)
+        & F.col("numVotes").isNotNull()
+    )
 
-   worst_rated = worst_rated.withColumn("numVotes", F.col("numVotes").cast("int")) \
-                            .orderBy(F.col("numVotes").desc()) \
-                            .select("primaryTitle", "startYear", "averageRating", "numVotes")
+    worst_rated = (
+        worst_rated.withColumn("numVotes", F.col("numVotes"))
+        .orderBy(F.col("numVotes").desc())
+        .select("primaryTitle", "startYear", "averageRating", "numVotes")
+    )
 
-   worst_rated.show(20, truncate=False)
+    worst_rated.show(20, truncate=False)
+    worst_rated.write.mode("overwrite").option("header", True).csv(
+        "output/yarko.hate_watched"
+    )
 
 
 def combined_genres(title_df):
@@ -148,6 +169,9 @@ def combined_genres(title_df):
     )
 
     pair_counts.show(20, truncate=False)
+    pair_counts.write.mode("overwrite").option("header", True).csv(
+        "output/yarko.combined_genres"
+    )
 
 
 def best_actors_combined(title_df, principals_df, names_df):
@@ -202,6 +226,9 @@ def best_actors_combined(title_df, principals_df, names_df):
     )
 
     final.select("name1", "name2", "projects").show(20, truncate=False)
+    final.write.mode("overwrite").option("header", True).csv(
+        "output/yarko.actors_combined"
+    )
 
 
 def call_yarko_functions(
