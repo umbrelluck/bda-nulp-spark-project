@@ -2,7 +2,8 @@ from loader import load_database, test_database
 
 from yevhen import call_yevhen_functions
 from yarko import call_yarko_functions
-
+from andrew import call_andrew_functions
+from pavlo import call_pavlo_functions
 
 if __name__ == "__main__":
     IMDb_path = "../Dataset"
@@ -12,6 +13,15 @@ if __name__ == "__main__":
 
     print("------- < Testing > -------")
     test_database(imdb)
+
+    print("------- < PAVLO > -------")
+    call_pavlo_functions(
+        imdb["title.basics"],
+        imdb["title.ratings"],
+        imdb["name.basics"],
+        imdb["title.principals"],
+        imdb["title.crew"]
+    )
 
     print("------- < YEVHEN > -------")
     call_yevhen_functions(
@@ -31,4 +41,14 @@ if __name__ == "__main__":
         imdb["name.basics"],
         imdb["title.principals"],
         imdb["title.crew"],
+    )
+
+    print("------- < ANDREW > -------")
+    call_andrew_functions(
+        imdb["title.basics"],
+        imdb["title.principals"],
+        imdb["title.ratings"],
+        imdb["title.crew"],
+        imdb["name.basics"],
+        imdb["title.episode"],
     )
