@@ -2,6 +2,7 @@ from pyspark.sql import SparkSession
 import os
 
 from yevhen import call_yevhen_functions
+from yarko import call_yarko_functions
 
 
 def setup():
@@ -16,6 +17,8 @@ def setup():
     spark = (
         SparkSession.builder.appName("IMDb Analysis")
         .config("spark.sql.repl.eagerEval.enabled", True)
+        .config("spark.driver.memory", "6g")
+        .config("spark.sql.shuffle.partitions", "100")
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("ERROR")
@@ -94,6 +97,12 @@ if __name__ == "__main__":
     # andrew(spark, .......)
     # eugene(spark, ........)
     # Пропоную просто зробити функцію для виклику своїх функцій і мати спокій, мій приклад:
+    print("------- < YEVHEN > -------")
     call_yevhen_functions(
         title_df, ratings_df, names_df, principals_df, crew_df, episodes_df
+    )
+
+    print("------- < YARKO > -------")
+    call_yarko_functions(
+        title_df, title_alt_df, ratings_df, names_df, principals_df, crew_df
     )
