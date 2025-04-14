@@ -66,16 +66,16 @@ def most_widespread_films(title_df, title_alt_df):
 
     language_counts = (
         akas_with_lang.groupBy("titleId")
-        .agg(F.countDistinct("language").alias("num_languages"))
-        .orderBy(F.col("num_languages").desc())
+        .agg(F.countDistinct("language").alias("langCount"))
+        .orderBy(F.col("langCount").desc())
     )
 
     top_100 = language_counts.limit(100)
 
     top_translated = (
         top_100.join(title_df, top_100.titleId == title_df.tconst)
-        .select("primaryTitle", "num_languages", "startYear", "genres")
-        .orderBy(F.col("num_languages").desc())
+        .select("primaryTitle", "langCount", "startYear", "genres")
+        .orderBy(F.col("langCount").desc())
     )
 
     top_translated.show(20, truncate=False)
@@ -158,14 +158,14 @@ def combined_genres(title_df):
     ).select(F.explode(F.col("genre_pairs")).alias("pair"))
 
     result = pairs.select(
-        F.col("pair").getItem(0).alias("genre1"),
-        F.col("pair").getItem(1).alias("genre2"),
+        F.col("pair").getItem(0).alias("firstGenre"),
+        F.col("pair").getItem(1).alias("secondGenre"),
     )
 
     pair_counts = (
-        result.groupBy("genre1", "genre2")
-        .agg(F.count("*").alias("film_count"))
-        .orderBy(F.col("film_count").desc())
+        result.groupBy("firstGenre", "secondGenre")
+        .agg(F.count("*").alias("filmCount"))
+        .orderBy(F.col("filmCount").desc())
     )
 
     pair_counts.show(20, truncate=False)
@@ -219,13 +219,13 @@ def best_actors_combined(title_df, principals_df, names_df):
     final = final.drop("rank")
 
     final = (
-        final.withColumnRenamed("actor1Name", "name1")
-        .withColumnRenamed("actor2Name", "name2")
+        final.withColumnRenamed("actor1Name", "firstActor")
+        .withColumnRenamed("actor2Name", "secondActor")
         .withColumnRenamed("shared_projects", "projects")
         .orderBy(F.col("projects").desc())
     )
 
-    final.select("name1", "name2", "projects").show(20, truncate=False)
+    final.select("firstActor", "secondActor", "projects").show(20, truncate=False)
     final.write.mode("overwrite").option("header", True).csv(
         "output/yarko.actors_combined"
     )
