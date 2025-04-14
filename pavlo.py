@@ -11,7 +11,7 @@ def non_adult_horror_movies(title_df, ratings_df):
 
     non_adult_movies.select("primaryTitle", "genres", "averageRating") \
         .orderBy(col("averageRating").desc()) \
-        .show(truncate=False)
+        .show(20, truncate=False)
     non_adult_movies.write.mode("overwrite").option("header", "true").csv("output/pavlo.non_adult_horrors")
 
 
@@ -21,7 +21,7 @@ def top_rated_movies(ratings_df, title_df):
         (col("averageRating") > 8.0) &
         (col("numVotes") > 10000)
     )
-    top_movies.select("primaryTitle", "averageRating", "numVotes").orderBy(col("averageRating").desc()).show(truncate=False)
+    top_movies.select("primaryTitle", "averageRating", "numVotes").orderBy(col("averageRating").desc()).show(20, truncate=False)
     top_movies.write.mode("overwrite").option("header", "true").csv("output/pavlo.top_rated_movies")
 
 
@@ -31,7 +31,7 @@ def movies_per_year(title_df):
         (col("titleType") == "movie")
     ).groupBy("startYear").agg(count("*").alias("numMovies"))
 
-    yearly_movies.orderBy(col("startYear").desc()).show(truncate=False)
+    yearly_movies.orderBy(col("startYear").desc()).show(20, truncate=False)
     yearly_movies.write.mode("overwrite").option("header", "true").csv("output/pavlo.movies_per_year")
 
 
@@ -65,11 +65,11 @@ def actor_average_rating(principals_df, ratings_df, names_df, title_df):
 
     ranked.select("rank", "primaryName", "num_movies", "weighted_average_rating", "total_votes") \
         .orderBy("rank") \
-        .show(truncate=False)
+        .show(20, truncate=False)
     ranked.write.mode("overwrite").option("header", "true").csv("output/pavlo.actor_average_rating")
 
 
-def longest_movies_writers(title_df, crew_df, names_df, top_n=10):
+def longest_movies_writers(title_df, crew_df, names_df, top_n=20):
 
     movies = title_df.filter(
         (col("titleType") == "movie") &
@@ -84,17 +84,17 @@ def longest_movies_writers(title_df, crew_df, names_df, top_n=10):
     top_movies = movies_with_writers.withColumn("rank", row_number().over(window_spec)) \
                                     .filter(col("rank") <= top_n)
 
-    exploded_writers = top_movies.withColumn("writer_id", explode(split(col("writers"), ",")))
+    longest_writers = top_movies.withColumn("writer_id", explode(split(col("writers"), ",")))
 
-    writers_with_names = exploded_writers.join(names_df.select("nconst", "primaryName"),
-                                               exploded_writers["writer_id"] == names_df["nconst"])
+    writers_with_names = longest_writers.join(names_df.select("nconst", "primaryName"),
+                                               longest_writers["writer_id"] == names_df["nconst"])
 
     writers_with_names.select(
         "primaryTitle", "runtimeMinutes", "primaryName"
-    ).orderBy(col("runtimeMinutes").desc(), col("primaryTitle")).show(truncate=False)
+    ).orderBy(col("runtimeMinutes").desc(), col("primaryTitle")).show(20, truncate=False)
     writers_with_names.write.mode("overwrite").option("header", "true").csv("output/pavlo.writers_of_longest_movies")
 
-def underrated_directors(title_df, crew_df, ratings_df, names_df, min_votes=1000, max_movies=5, min_movies=2, top_n=10):
+def underrated_directors(title_df, crew_df, ratings_df, names_df, min_votes=1000, max_movies=5, min_movies=2, top_n=20):
     rated_movies = title_df.filter((col("titleType") == "movie")) \
                            .join(ratings_df, on="tconst") \
                            .filter(col("numVotes") >= min_votes)
@@ -118,7 +118,7 @@ def underrated_directors(title_df, crew_df, ratings_df, names_df, min_votes=1000
 
     with_rank.select("rank", "primaryName", "avg_rating", "num_movies") \
              .orderBy("rank") \
-             .show(truncate=False)
+             .show(20, truncate=False)
     with_rank.write.mode("overwrite").open("output/pavlo.underrated_directors")
 
 def call_pavlo_functions(
