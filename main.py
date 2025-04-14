@@ -2,6 +2,7 @@ from loader import load_database, test_database
 
 from yevhen import call_yevhen_functions
 from yarko import call_yarko_functions
+from pavlo import call_pavlo_functions
 
 
 if __name__ == "__main__":
@@ -12,6 +13,15 @@ if __name__ == "__main__":
 
     print("------- < Testing > -------")
     test_database(imdb)
+
+    print("------- < PAVLO > -------")
+    call_pavlo_functions(
+        imdb["title.basics"],
+        imdb["title.ratings"],
+        imdb["name.basics"],
+        imdb["title.principals"],
+        imdb["title.crew"]
+    )
 
     print("------- < YEVHEN > -------")
     call_yevhen_functions(
