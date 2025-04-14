@@ -103,8 +103,13 @@ if __name__ == "__main__":
     # Для простоти кладіть ваші функції сюди, по типу
     # yarko(spark, ......)
     # pavlo(spark, ......)
+    print("------- < PAVLO > -------")
     call_pavlo_functions(
-        title_df, ratings_df, names_df, principals_df, crew_df, episodes_df
+        imdb["title.basics"],
+        imdb["title.ratings"],
+        imdb["name.basics"],
+        imdb["title.principals"],
+        imdb["title.crew"]
     )
     # andrew(spark, .......)
     # eugene(spark, ........)
