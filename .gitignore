@@ -10,6 +10,6 @@ wheels/
 .venv
 
 #Custom additions
-Dataset/
+output/
 .java
 .idea/

@@ -1,22 +1,26 @@
 from pyspark.sql import SparkSession
 
+from loader import load_database, test_database
 
 from yevhen import call_yevhen_functions
+from yarko import call_yarko_functions
 from pavlo import call_pavlo_functions
 
 
 def setup():
-    ratings_path = "Dataset/title.ratings.tsv"
-    crew_path = "Dataset/title.crew.tsv"
-    names_path = "Dataset/name.basics.tsv"
-    episodes_path = "Dataset/title.episode.tsv"
-    title_path = "Dataset/title.basics.tsv"
-    title_alt_path = "Dataset/title.akas.tsv"
-    principals_path = "Dataset/title.principals.tsv"
+    ratings_path = "../Dataset/title.ratings.tsv"
+    crew_path = "../Dataset/title.crew.tsv"
+    names_path = "../Dataset/name.basics.tsv"
+    episodes_path = "../Dataset/title.episode.tsv"
+    title_path = "../Dataset/title.basics.tsv"
+    title_alt_path = "../Dataset/title.akas.tsv"
+    principals_path = "../Dataset/title.principals.tsv"
 
     spark = (
         SparkSession.builder.appName("IMDb Analysis")
         .config("spark.sql.repl.eagerEval.enabled", True)
+        .config("spark.driver.memory", "6g")
+        .config("spark.sql.shuffle.partitions", "100")
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("ERROR")
@@ -77,16 +81,23 @@ def setup():
 
 
 if __name__ == "__main__":
-    (
-        spark,
-        crew_df,
-        ratings_df,
-        names_df,
-        episodes_df,
-        title_df,
-        title_alt_df,
-        principals_df,
-    ) = setup()
+    # (
+    #     spark,
+    #     crew_df,
+    #     ratings_df,
+    #     names_df,
+    #     episodes_df,
+    #     title_df,
+    #     title_alt_df,
+    #     principals_df,
+    # ) = setup()
+
+    IMDb_path = "../Dataset"
+    print("------- < Loading > -------")
+    imdb = load_database(IMDb_path)
+
+    print("------- < Testing > -------")
+    test_database(imdb)
 
     # NOTE:
     # Для простоти кладіть ваші функції сюди, по типу
@@ -98,7 +109,20 @@ if __name__ == "__main__":
     # andrew(spark, .......)
     # eugene(spark, ........)
     # Пропоную просто зробити функцію для виклику своїх функцій і мати спокій, мій приклад:
-    call_yevhen_functions(
-         title_df, ratings_df, names_df, principals_df, crew_df, episodes_df
-    )
+    print("------- < YEVHEN > -------")
+    # call_yevhen_functions(
+    #     title_df, ratings_df, names_df, principals_df, crew_df, episodes_df
+    # )
 
+    print("------- < YARKO > -------")
+    call_yarko_functions(
+        imdb["title.basics"],
+        imdb["title.akas"],
+        imdb["title.ratings"],
+        imdb["name.basics"],
+        imdb["title.principals"],
+        imdb["title.crew"],
+    )
+    # call_yarko_functions(
+    #     title_df, title_alt_df, ratings_df, names_df, principals_df, crew_df
+    # )
