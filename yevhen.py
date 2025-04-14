@@ -2,6 +2,8 @@ from pyspark.sql.functions import col, explode, split, row_number, avg, countDis
 from pyspark.sql.window import Window
 
 
+RESULTS_DIR = "output"
+
 def top_rated_movies_by_year(title_df, ratings_df):
     movies = (
         title_df.filter((col("titleType") == "movie") & (col("isAdult") == 0))
@@ -10,10 +12,12 @@ def top_rated_movies_by_year(title_df, ratings_df):
     )
     window_spec = Window.partitionBy("startYear").orderBy(col("averageRating").desc())
     ranked = movies.withColumn("rank", row_number().over(window_spec))
-    top_movies = ranked.filter(col("rank") <= 3)
-    top_movies.select("startYear", "primaryTitle", "averageRating", "numVotes", "rank") \
-        .orderBy("startYear", "rank") \
-        .show(30, truncate=False)
+    top_movies = ranked.filter(col("rank") <= 3).select(
+        "startYear", "primaryTitle", "averageRating", "numVotes", "rank"
+    ).orderBy("startYear", "rank")
+
+    top_movies.show(30, truncate=False)
+    top_movies.write.mode("overwrite").option("header", True).csv(f"{RESULTS_DIR}/yevhen.top_rated_movies_by_year")
 
 
 def most_active_actors_in_movies(principals_df, names_df, title_df):
@@ -30,6 +34,7 @@ def most_active_actors_in_movies(principals_df, names_df, title_df):
     )
 
     result.show(10, truncate=False)
+    result.write.mode("overwrite").option("header", True).csv(f"{RESULTS_DIR}/yevhen.most_active_actors")
 
 
 def top_directors_with_ratings(crew_df, ratings_df, title_df, names_df):
@@ -45,13 +50,14 @@ def top_directors_with_ratings(crew_df, ratings_df, title_df, names_df):
     )
 
     top_directors = rated_titles_with_directors.groupBy("primaryName") \
-        .agg(avg("averageRating").alias("averageRating"))
-    top_directors.orderBy(col("averageRating").desc()).show(20, truncate=False)
+        .agg(avg("averageRating").alias("averageRating")) \
+        .orderBy(col("averageRating").desc())
+
+    top_directors.show(20, truncate=False)
+    top_directors.write.mode("overwrite").option("header", True).csv(f"{RESULTS_DIR}/yevhen.top_directors")
 
 
 def popular_genres(title_df, ratings_df):
-    from pyspark.sql.functions import explode, split
-
     exploded = (
         title_df.withColumn("genre", explode(split(col("genres"), ",")))
         .join(ratings_df, "tconst")
@@ -66,6 +72,7 @@ def popular_genres(title_df, ratings_df):
     )
 
     result.show(10, truncate=False)
+    result.write.mode("overwrite").option("header", True).csv(f"{RESULTS_DIR}/yevhen.popular_genres")
 
 
 def top_shows_by_season(episodes_df, ratings_df, title_df):
@@ -84,6 +91,7 @@ def top_shows_by_season(episodes_df, ratings_df, title_df):
     )
 
     result.show(10, truncate=False)
+    result.write.mode("overwrite").option("header", True).csv(f"{RESULTS_DIR}/yevhen.top_shows_by_season")
 
 
 def top_movie_per_genre(title_df, ratings_df):
@@ -94,10 +102,12 @@ def top_movie_per_genre(title_df, ratings_df):
     rated_titles = rated_titles.withColumn("genre", explode(split("genres", ",")))
     window_spec = Window.partitionBy("genre").orderBy(col("averageRating").desc())
     top_ranked = rated_titles.withColumn("rank", row_number().over(window_spec))
-    top_movies = top_ranked.filter(col("rank") == 1)
-    top_movies.select("genre", "primaryTitle", "averageRating").orderBy("genre").show(
-        truncate=False
-    )
+    top_movies = top_ranked.filter(col("rank") == 1).select(
+        "genre", "primaryTitle", "averageRating"
+    ).orderBy("genre")
+
+    top_movies.show(truncate=False)
+    top_movies.write.mode("overwrite").option("header", True).csv(f"{RESULTS_DIR}/yevhen.top_movie_per_genre")
 
 
 def call_yevhen_functions(

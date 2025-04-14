@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-
+import os
 
 from yevhen import call_yevhen_functions
 
@@ -97,4 +97,3 @@ if __name__ == "__main__":
     call_yevhen_functions(
         title_df, ratings_df, names_df, principals_df, crew_df, episodes_df
     )
-
